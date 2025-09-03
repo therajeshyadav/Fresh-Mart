@@ -7,9 +7,7 @@ const generateToken = (id) => {
   });
 };
 
-// @desc    Register a new user
-// @route   POST /api/auth/register
-// @access  Public
+
 export const registerUser = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
@@ -33,7 +31,7 @@ export const registerUser = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
-        token: generateToken(user._id),
+         token: generateToken(user._id)
       });
     } else {
       res.status(400).json({ message: 'Invalid user data' });
@@ -43,9 +41,7 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// @desc    Authenticate user & get token
-// @route   POST /api/auth/login
-// @access  Public
+
 export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -68,9 +64,7 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// @desc    Get user profile
-// @route   GET /api/auth/profile
-// @access  Private
+
 export const getUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select('-password');
@@ -85,9 +79,7 @@ export const getUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Update user profile
-// @route   PUT /api/auth/profile
-// @access  Private
+
 export const updateUserProfile = async (req, res) => {
   try {
     const user = await User.findById(req.user._id);

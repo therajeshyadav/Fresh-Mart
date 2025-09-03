@@ -1,9 +1,7 @@
 import Cart from '../models/Cart.js';
 import Product from '../models/Product.js';
 
-// @desc    Get user cart
-// @route   GET /api/cart
-// @access  Private
+
 export const getCart = async (req, res) => {
   try {
     const cart = await Cart.findOne({ user: req.user._id }).populate('items.product');

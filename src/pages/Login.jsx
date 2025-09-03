@@ -158,29 +158,7 @@ const Login = () => {
           </div>
         </form>
         
-        {/* Demo Login Buttons */}
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h3 className="text-lg font-medium text-gray-900 mb-4 text-center">Demo Accounts</h3>
-          <div className="space-y-3">
-            <button
-              onClick={() => handleDemoLogin('admin')}
-              disabled={loading}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
-            >
-              Demo Admin Login
-            </button>
-            <button
-              onClick={() => handleDemoLogin('customer')}
-              disabled={loading}
-              className="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 disabled:opacity-50 transition-colors"
-            >
-              Demo Customer Login
-            </button>
-          </div>
-          <p className="text-xs text-gray-500 mt-3 text-center">
-            Use demo accounts to explore admin and customer features
-          </p>
-        </div>
+       
       </div>
     </div>
   );
