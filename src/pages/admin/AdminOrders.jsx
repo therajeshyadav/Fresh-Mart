@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { Eye, Package, Search, Filter, Calendar } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import { Eye, Package, Search, Filter, Calendar } from "lucide-react";
+import { AdminApi } from "../../api/auth";
+import { OrdersApi } from "../../api/auth";
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showOrderModal, setShowOrderModal] = useState(false);
 
@@ -14,17 +16,10 @@ const AdminOrders = () => {
 
   const fetchOrders = async () => {
     try {
-      const response = await fetch('/api/orders', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setOrders(data);
-      }
+      const data = await AdminApi.list();
+      setOrders(data); // always array now
     } catch (error) {
-      console.error('Error fetching orders:', error);
+      console.error("Error fetching orders:", error);
     } finally {
       setLoading(false);
     }
@@ -32,43 +27,36 @@ const AdminOrders = () => {
 
   const handleStatusUpdate = async (orderId, newStatus) => {
     try {
-      const response = await fetch(`/api/orders/${orderId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ status: newStatus })
-      });
-      if (response.ok) {
-        fetchOrders();
-      }
+       await OrdersApi.updateStatus(orderId, newStatus);
+      fetchOrders();
+      
     } catch (error) {
-      console.error('Error updating order status:', error);
+      console.error("Error updating order status:", error);
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
-      case 'delivered':
-        return 'bg-green-100 text-green-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "processing":
+        return "bg-blue-100 text-blue-800";
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
       default:
-        return 'bg-gray-100 text-gray-800';
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const filteredOrders = orders.filter(order =>
-    order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    order.status.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOrders = orders.filter(
+    (order) =>
+      order._id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.user?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      order.status.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   if (loading) {
@@ -87,7 +75,9 @@ const AdminOrders = () => {
       <div className="max-w-7xl mx-auto">
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900">Manage Orders</h1>
-          <p className="text-gray-600 mt-2">View and manage all customer orders</p>
+          <p className="text-gray-600 mt-2">
+            View and manage all customer orders
+          </p>
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
@@ -141,8 +131,12 @@ const AdminOrders = () => {
                       #{order._id.slice(-8)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{order.user?.name}</div>
-                      <div className="text-sm text-gray-500">{order.user?.email}</div>
+                      <div className="text-sm text-gray-900">
+                        {order.user?.name}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        {order.user?.email}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${order.totalAmount}
@@ -150,8 +144,12 @@ const AdminOrders = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <select
                         value={order.status}
-                        onChange={(e) => handleStatusUpdate(order._id, e.target.value)}
-                        className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(order.status)} border-0 focus:ring-2 focus:ring-blue-500`}
+                        onChange={(e) =>
+                          handleStatusUpdate(order._id, e.target.value)
+                        }
+                        className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(
+                          order.status
+                        )} border-0 focus:ring-2 focus:ring-blue-500`}
                       >
                         <option value="pending">Pending</option>
                         <option value="processing">Processing</option>
@@ -195,31 +193,51 @@ const AdminOrders = () => {
                 ✕
               </button>
             </div>
-            
+
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <h3 className="font-medium text-gray-900">Order Information</h3>
-                  <p className="text-sm text-gray-600">Order ID: #{selectedOrder._id.slice(-8)}</p>
-                  <p className="text-sm text-gray-600">Date: {new Date(selectedOrder.createdAt).toLocaleString()}</p>
-                  <p className="text-sm text-gray-600">Status: {selectedOrder.status}</p>
+                  <h3 className="font-medium text-gray-900">
+                    Order Information
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Order ID: #{selectedOrder._id.slice(-8)}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Date: {new Date(selectedOrder.createdAt).toLocaleString()}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Status: {selectedOrder.status}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="font-medium text-gray-900">Customer Information</h3>
-                  <p className="text-sm text-gray-600">Name: {selectedOrder.user?.name}</p>
-                  <p className="text-sm text-gray-600">Email: {selectedOrder.user?.email}</p>
-                  <p className="text-sm text-gray-600">Phone: {selectedOrder.shippingAddress?.phone}</p>
+                  <h3 className="font-medium text-gray-900">
+                    Customer Information
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Name: {selectedOrder.user?.name}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Email: {selectedOrder.user?.email}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    Phone: {selectedOrder.shippingAddress?.phone}
+                  </p>
                 </div>
               </div>
 
               <div>
-                <h3 className="font-medium text-gray-900 mb-2">Shipping Address</h3>
+                <h3 className="font-medium text-gray-900 mb-2">
+                  Shipping Address
+                </h3>
                 <div className="bg-gray-50 p-3 rounded-md">
                   <p className="text-sm text-gray-600">
-                    {selectedOrder.shippingAddress?.street}, {selectedOrder.shippingAddress?.city}
+                    {selectedOrder.shippingAddress?.street},{" "}
+                    {selectedOrder.shippingAddress?.city}
                   </p>
                   <p className="text-sm text-gray-600">
-                    {selectedOrder.shippingAddress?.state}, {selectedOrder.shippingAddress?.zipCode}
+                    {selectedOrder.shippingAddress?.state},{" "}
+                    {selectedOrder.shippingAddress?.zipCode}
                   </p>
                 </div>
               </div>
@@ -228,7 +246,10 @@ const AdminOrders = () => {
                 <h3 className="font-medium text-gray-900 mb-2">Order Items</h3>
                 <div className="space-y-2">
                   {selectedOrder.items?.map((item, index) => (
-                    <div key={index} className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <div
+                      key={index}
+                      className="flex justify-between items-center py-2 border-b border-gray-100"
+                    >
                       <div className="flex items-center">
                         <img
                           src={item.product?.image}
@@ -236,11 +257,17 @@ const AdminOrders = () => {
                           className="w-10 h-10 rounded object-cover mr-3"
                         />
                         <div>
-                          <p className="text-sm font-medium text-gray-900">{item.product?.name}</p>
-                          <p className="text-xs text-gray-500">Qty: {item.quantity}</p>
+                          <p className="text-sm font-medium text-gray-900">
+                            {item.product?.name}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Qty: {item.quantity}
+                          </p>
                         </div>
                       </div>
-                      <p className="text-sm font-medium text-gray-900">${item.price}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        ${item.price}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -248,8 +275,12 @@ const AdminOrders = () => {
 
               <div className="border-t pt-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-lg font-semibold text-gray-900">Total</span>
-                  <span className="text-lg font-semibold text-gray-900">${selectedOrder.totalAmount}</span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    Total
+                  </span>
+                  <span className="text-lg font-semibold text-gray-900">
+                    ${selectedOrder.totalAmount}
+                  </span>
                 </div>
               </div>
             </div>
@@ -261,4 +292,3 @@ const AdminOrders = () => {
 };
 
 export default AdminOrders;
-

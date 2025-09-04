@@ -5,7 +5,7 @@ import axios from "axios";
 import ProductCard from "../components/ProductCard";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useAuth } from "../context/AuthContext"; // ✅ import auth
-
+import { ProductsApi } from "../api/auth";
 const Home = () => {
   const [featuredProducts, setFeaturedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,16 +22,17 @@ const Home = () => {
     fetchStats();
   }, []);
 
-  const fetchFeaturedProducts = async () => {
-    try {
-      const response = await axios.get("/api/products");
-      setFeaturedProducts(response.data.products.slice(0, 6));
-    } catch (error) {
-      console.error("Error fetching products:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const fetchFeaturedProducts = async () => {
+  try {
+    const products = await ProductsApi.list(); // ab direct array aa raha hai
+    setFeaturedProducts(products.slice(0, 6));
+  } catch (error) {
+    console.error("Error fetching products:", error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const fetchStats = async () => {
     try {

@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
 import { useAuth } from "./AuthContext";
+import { CartApi } from "../api/auth";
 
 export const CartContext = createContext();
 
@@ -28,14 +28,9 @@ export const CartProvider = ({ children }) => {
   const fetchCart = async () => {
     try {
       setLoading(true);
-      const response = await axios.get("/api/cart", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      console.log("🛒 Cart API Response:", response.data);
-
-      setCart(response.data);
+      const data = await CartApi.get();
+      console.log("🛒 Cart API Response:", data);
+      setCart(data);
     } catch (error) {
       console.error("Error fetching cart:", error);
     } finally {
@@ -46,17 +41,9 @@ export const CartProvider = ({ children }) => {
   const addToCart = async (productId, quantity = 1) => {
     try {
       setLoading(true);
-      const response = await axios.post(
-        "/api/cart",
-        { productId, quantity },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      setCart(response.data);
-      return response.data;
+      const data = await CartApi.add(productId, quantity);
+      setCart(data);
+      return data;
     } catch (error) {
       throw new Error(error.response?.data?.message || "Failed to add to cart");
     } finally {
@@ -67,17 +54,9 @@ export const CartProvider = ({ children }) => {
   const updateQuantity = async (productId, quantity) => {
     try {
       setLoading(true);
-      const response = await axios.put(
-        `/api/cart/${productId}`,
-        { quantity },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-      setCart(response.data);
-      return response.data;
+      const data = await CartApi.update(productId, quantity);
+      setCart(data);
+      return data;
     } catch (error) {
       throw new Error(
         error.response?.data?.message || "Failed to update quantity"
@@ -90,13 +69,9 @@ export const CartProvider = ({ children }) => {
   const removeFromCart = async (productId) => {
     try {
       setLoading(true);
-      const response = await axios.delete(`/api/cart/${productId}`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setCart(response.data);
-      return response.data;
+      const data = await CartApi.remove(productId);
+      setCart(data);
+      return data;
     } catch (error) {
       throw new Error(
         error.response?.data?.message || "Failed to remove from cart"
@@ -109,12 +84,8 @@ export const CartProvider = ({ children }) => {
   const clearCart = async () => {
     try {
       setLoading(true);
-      await axios.delete("/api/cart", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      setCart({ items: [], totalAmount: 0 });
+      const data = await CartApi.clear();
+      setCart(data || { items: [], totalAmount: 0 });
     } catch (error) {
       throw new Error(error.response?.data?.message || "Failed to clear cart");
     } finally {

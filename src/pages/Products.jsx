@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { Search, Filter, ShoppingCart, Heart, Star } from "lucide-react";
 import { CartContext } from "../context/CartContext";
 import ProductCard from "../components/ProductCard";
+import { ProductsApi } from "../api/auth";
 
 const Products = () => {
   const { addToCart } = useContext(CartContext);
@@ -20,18 +21,7 @@ const Products = () => {
   const fetchProducts = async () => {
     try {
       setError(null);
-      const response = await fetch("/api/products");
-
-      if (!response.ok) {
-        throw new Error(`Failed to load products (${response.status})`);
-      }
-      const raw = await response.json();
-      // Support both [{...}] and { products: [{...}] } API shapes
-      const list = Array.isArray(raw?.products)
-        ? raw.products
-        : Array.isArray(raw)
-        ? raw
-        : [];
+      const list = await ProductsApi.list();
       setProducts(list);
       const uniqueCategories = [
         ...new Set(list.map((p) => p?.category).filter(Boolean)),

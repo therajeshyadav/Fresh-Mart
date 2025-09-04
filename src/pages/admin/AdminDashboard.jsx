@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Package, Users, ShoppingCart, TrendingUp } from "lucide-react";
-
+import { AdminApi } from "../../api/auth";
 const AdminDashboard = () => {
   const [stats, setStats] = useState({
     totalUsers: 0,
@@ -16,21 +16,8 @@ const AdminDashboard = () => {
 
   const fetchDashboardStats = async () => {
     try {
-      const response = await fetch("/api/admin/stats", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        console.log(data);
-        setStats({
-          totalUsers: data.totalUsers ?? 0,
-          totalProducts: data.totalProducts ?? 0,
-          totalOrders: data.totalOrders ?? 0,
-          totalRevenue: data.totalRevenue ?? 0,
-        });
-      }
+      const stats = await AdminApi.stats();
+      setStats(stats);
     } catch (error) {
       console.error("Error fetching dashboard stats:", error);
     }

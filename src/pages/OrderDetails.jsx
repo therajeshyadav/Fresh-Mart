@@ -1,29 +1,30 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
+import { OrdersApi } from "../api/auth"; // ✅ wrapper
 
 export default function OrderDetails() {
   const { id } = useParams();
   const [order, setOrder] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/orders/${id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        if (!res.ok) throw new Error("Failed to fetch order");
-        const data = await res.json();
-        setOrder(data);
+        const data = await OrdersApi.get(id); // ✅ wrapper call
+        setOrder(data); // wrapper should return order object
       } catch (err) {
         console.error("Error fetching order:", err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchOrder();
   }, [id]);
 
-  if (!order) return <p className="p-6">Loading order details...</p>;
+  if (loading) return <p className="p-6">Loading order details...</p>;
+  if (!order) return <p className="p-6 text-red-600">Order not found.</p>;
+
+  const items = order.items || order.orderItems || [];
 
   return (
     <div className="max-w-4xl mx-auto p-6">
@@ -57,7 +58,7 @@ export default function OrderDetails() {
             <h3 className="font-semibold text-lg mb-2">Payment</h3>
             <p className="text-gray-700">{order.paymentMethod}</p>
             <p className="text-gray-700 font-medium">
-              Total: ${order.totalPrice.toFixed(2)}
+              Total: ${order.totalPrice?.toFixed(2) || "0.00"}
             </p>
           </div>
         </div>
@@ -65,22 +66,23 @@ export default function OrderDetails() {
         {/* Items */}
         <h3 className="font-semibold text-lg mb-3">Items</h3>
         <div className="divide-y divide-gray-200">
-          {order.items.map((item, i) => (
-            <div
-              key={i}
-              className="flex items-center justify-between py-3"
-            >
-              <div>
-                <p className="font-medium">{item.name || item.product}</p>
-                <p className="text-sm text-gray-600">
-                  Qty: {item.quantity} × ${item.price}
+          {items.length > 0 ? (
+            items.map((item, i) => (
+              <div key={i} className="flex items-center justify-between py-3">
+                <div>
+                  <p className="font-medium">{item.name || item.product}</p>
+                  <p className="text-sm text-gray-600">
+                    Qty: {item.quantity} × ${item.price?.toFixed(2) || "0.00"}
+                  </p>
+                </div>
+                <p className="font-medium">
+                  ${(item.quantity * item.price).toFixed(2)}
                 </p>
               </div>
-              <p className="font-medium">
-                ${(item.quantity * item.price).toFixed(2)}
-              </p>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-gray-500">No items found in this order.</p>
+          )}
         </div>
 
         {/* Back button */}

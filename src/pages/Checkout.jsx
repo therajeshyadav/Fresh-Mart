@@ -2,6 +2,7 @@ import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { CreditCard, MapPin } from "lucide-react";
 import { CartContext } from "../context/CartContext";
+import { OrdersApi } from "../api/auth"; // ✅ use OrdersApi wrapper
 
 const Checkout = () => {
   const { cart, clearCart } = useContext(CartContext);
@@ -73,32 +74,21 @@ const Checkout = () => {
           state: formData.state,
           zipCode: formData.zipCode,
         },
-        paymentMethod: "card", // fix: don't send cardNumber, cvv to backend
+        paymentMethod: "card", // ⚠️ don't send sensitive card details
         itemsPrice,
         taxPrice,
         shippingPrice,
         totalPrice,
       };
 
-      const response = await fetch("http://localhost:5000/api/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(orderData),
-      });
+      // ✅ Use OrdersApi wrapper instead of fetch
+      const result = await OrdersApi.create(orderData);
 
-      if (response.ok) {
-        const result = await response.json();
-        clearCart();
-        navigate(`/orders/${result._id}`);
-      } else {
-        throw new Error("Failed to create order");
-      }
+      clearCart();
+      navigate(`/orders/${result._id}`);
     } catch (error) {
       console.error("Error creating order:", error);
-      alert("Failed to create order. Please try again.");
+      alert(error.message || "Failed to create order. Please try again.");
     } finally {
       setLoading(false);
     }

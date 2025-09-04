@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Search, Filter } from "lucide-react";
 import { useLocation } from "react-router-dom";
+import { ProductsApi } from "../../api/auth";
 
 const AdminProducts = () => {
   const [products, setProducts] = useState([]);
@@ -30,25 +31,18 @@ const AdminProducts = () => {
   }, []);
   const location = useLocation();
 
-useEffect(() => {
-  const params = new URLSearchParams(location.search);
-  if (params.get("add") === "new") {
-    setFormData(defaultFormData); // reset
-    setShowAddModal(true);
-  }
-}, [location.search]);
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get("add") === "new") {
+      setFormData(defaultFormData); // reset
+      setShowAddModal(true);
+    }
+  }, [location.search]);
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch("/api/products", {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setProducts(data.products || []);
-      }
+      const data = await ProductsApi.list(); // ✅ centralized call
+      setProducts(data);
     } catch (error) {
       console.error("Error fetching products:", error);
     } finally {
@@ -59,30 +53,16 @@ useEffect(() => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const url = editingProduct
-        ? `/api/products/${editingProduct._id}`
-        : "/api/products";
-
-      const method = editingProduct ? "PUT" : "POST";
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        setShowAddModal(false);
-        setEditingProduct(null);
-        setFormData(defaultFormData); // ✅ Reset properly
-        fetchProducts();
+      if (editingProduct) {
+        await ProductsApi.update(editingProduct._id, formData);
       } else {
-        const errorData = await response.json();
-        console.error("Error response:", errorData);
+        await ProductsApi.create(formData);
       }
+
+      setShowAddModal(false);
+      setEditingProduct(null);
+      setFormData(defaultFormData); // reset form
+      fetchProducts(); // refresh list
     } catch (error) {
       console.error("Error saving product:", error);
     }
@@ -96,19 +76,11 @@ useEffect(() => {
     });
     setShowAddModal(true);
   };
-
   const handleDelete = async (productId) => {
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
-        const response = await fetch(`/api/products/${productId}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        if (response.ok) {
-          fetchProducts();
-        }
+        await ProductsApi.remove(productId); // ✅ centralized
+        fetchProducts(); // refresh list
       } catch (error) {
         console.error("Error deleting product:", error);
       }

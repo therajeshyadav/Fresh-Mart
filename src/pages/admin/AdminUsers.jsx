@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Search, Filter, Mail, Phone, Calendar } from 'lucide-react';
+import { AdminApi } from '../../api/auth';
 
 const AdminUsers = () => {
   const [users, setUsers] = useState([]);
@@ -12,41 +13,26 @@ const AdminUsers = () => {
     fetchUsers();
   }, []);
 
-  const fetchUsers = async () => {
-    try {
-      const response = await fetch('/api/users', {
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setUsers(data);
-      }
-    } catch (error) {
-      console.error('Error fetching users:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
+const fetchUsers = async () => {
+  try {
+    const users = await AdminApi.userlist();
+    setUsers(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleUserStatusToggle = async (userId, currentStatus) => {
-    try {
-      const response = await fetch(`/api/users/${userId}/status`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ isActive: !currentStatus })
-      });
-      if (response.ok) {
-        fetchUsers();
-      }
-    } catch (error) {
-      console.error('Error updating user status:', error);
-    }
-  };
+const handleUserStatusToggle = async (userId, currentStatus) => {
+  try {
+    await AdminApi.toggleStatus(userId, currentStatus);
+    fetchUsers(); // refresh
+  } catch (error) {
+    console.error("Error updating user status:", error);
+  }
+};
 
   const filteredUsers = users.filter(user =>
     user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
